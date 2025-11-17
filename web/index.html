@@ -19,9 +19,13 @@
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
   <meta name="description" content="A new Flutter project.">
+  <!-- Relax cross-origin isolation so Google popup window can close itself safely -->
+  <meta http-equiv="Cross-Origin-Opener-Policy" content="same-origin-allow-popups">
+  <meta http-equiv="Cross-Origin-Embedder-Policy" content="unsafe-none">
 
-  <!-- iOS meta tags & icons -->
+  <!-- iOS & PWA meta tags -->
   <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
   <meta name="apple-mobile-web-app-title" content="taskup">
   <link rel="apple-touch-icon" href="icons/Icon-192.png">
@@ -34,7 +38,50 @@
 
   <script>
     // The value below is injected by flutter build, do not touch.
-    const serviceWorkerVersion = null;
+    const serviceWorkerVersion = {{flutter_service_worker_version}};
+  </script>
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <script>
+    window.taskupIdentity = {
+      requestIdToken: function(clientId) {
+        if (!window.google || !google.accounts || !google.accounts.id) {
+          window.dispatchEvent(new CustomEvent('taskup-identity-error', { detail: 'GSI script missing' }));
+          return;
+        }
+
+        let settled = false;
+        const finish = function(eventName, detail) {
+          if (settled) return;
+          settled = true;
+          window.dispatchEvent(new CustomEvent(eventName, { detail }));
+        };
+
+        google.accounts.id.initialize({
+          client_id: clientId,
+          callback: function(response) {
+            if (response && response.credential) {
+              finish('taskup-identity-success', response.credential);
+            } else {
+              finish('taskup-identity-error', 'Empty credential from Google');
+            }
+          },
+          ux_mode: 'popup',
+          auto_select: false,
+          cancel_on_tap_outside: true,
+        });
+
+        google.accounts.id.prompt(function(notification) {
+          if (notification.isDismissedMoment && notification.isDismissedMoment()) {
+            finish('taskup-identity-dismissed');
+          } else if (notification.isSkippedMoment && notification.isSkippedMoment()) {
+            finish('taskup-identity-dismissed');
+          } else if (notification.isNotDisplayed && notification.isNotDisplayed()) {
+            const reason = notification.notDisplayedReason || 'not_displayed';
+            finish('taskup-identity-error', reason);
+          }
+        });
+      }
+    };
   </script>
   <!-- This script adds the flutter initialization JS code -->
   <script src="flutter.js" defer></script>

@@ -1,0 +1,27 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+
+    {
+      "name": "Flutter Web (Edge)",
+      "request": "launch",
+      "type": "dart",
+      "program": "lib/main.dart",
+      "args": [
+        "-d",
+        "edge",
+        "--web-port=9001"
+      ]
+    },
+    {
+      "name": "Flutter Android (Device/Emulator)",
+      "request": "launch",
+      "type": "dart",
+      "program": "lib/main.dart",
+      "args": [
+        "-d",
+        "emulator-5554"
+      ]
+    }
+  ]
+}

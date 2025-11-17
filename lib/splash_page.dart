@@ -19,9 +19,10 @@ class _SplashPageState extends State<SplashPage> {
 
   Future<void> _checkLoginStatus() async {
     final prefs = await SharedPreferences.getInstance();
-    final loggedIn = prefs.getBool('loggedIn') ?? false;
+    final token = prefs.getString('accessToken');
+    final loggedIn = token != null && token.isNotEmpty;
 
-    await Future.delayed(const Duration(seconds: 2)); // Simula carga
+    if (!mounted) return;
 
     if (loggedIn) {
       Navigator.pushReplacement(
