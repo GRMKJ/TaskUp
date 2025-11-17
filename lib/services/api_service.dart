@@ -27,7 +27,7 @@ class ApiService {
   final TaskCache _cache;
   final TaskChangeQueue _queue;
 
-  static const String baseUrl = 'http://127.0.0.1:8000';
+  static const String baseUrl = 'https://taskupapi.cardomomo.icu/';
 
   Uri _uri(String path, [Map<String, String>? query]) {
     final uri = Uri.parse('$baseUrl$path');
@@ -79,6 +79,34 @@ class ApiService {
     );
     return _processResponse(response);
   }
+
+Future<Map<String, dynamic>> loginWithGoogle({
+  required String idToken,
+  String? deviceUuid,
+}) async {
+
+  // Debug vibes
+  print("=== GOOGLE LOGIN DEBUG ===");
+  print("ID TOKEN => $idToken");
+  print("DEVICE UUID => $deviceUuid");
+  print("JSON SENT => ${jsonEncode({
+    'id_token': idToken,
+    if (deviceUuid != null && deviceUuid.isNotEmpty) 'device_uuid': deviceUuid,
+  })}");
+  print("==========================");
+
+  final response = await _client.post(
+    _uri('/auth/google'),
+    headers: _baseHeaders(),
+    body: jsonEncode({
+      'id_token': idToken,
+      if (deviceUuid != null && deviceUuid.isNotEmpty) 'device_uuid': deviceUuid,
+    }),
+  );
+
+  return _processResponse(response);
+}
+
 
   Future<void> registerDevice({
     required String token,
@@ -142,7 +170,8 @@ class ApiService {
         body: jsonEncode({
           'title': title,
           'priority': priority.apiValue,
-          if (description != null && description.isNotEmpty) 'description': description,
+          'description': description,
+          'due_at': null,
         }),
       );
       final data = await _processResponse(response);
@@ -326,8 +355,8 @@ class ApiService {
     final payload = <String, dynamic>{
       'title': snapshot['title'],
       'priority': snapshot['priority'],
-      'description': snapshot['description'],
-      'due_at': snapshot['due_at'],
+      'description': snapshot.containsKey('description') ? snapshot['description'] : null,
+      'due_at': snapshot.containsKey('due_at') ? snapshot['due_at'] : null,
     };
 
     if (payload['priority'] is TaskPriority) {
